@@ -11,6 +11,7 @@ from typing import Any
 import yaml
 from plyer import notification
 from tgtg import TgtgClient
+import pandas as pd
 
 if platform == "linux" or platform == "linux2":
     if os.getenv("XDG_RUNTIME_DIR") is None:
@@ -28,6 +29,7 @@ home_dir: str = os.path.expanduser("~")
 config_file_name: str = f"{home_dir}/.tgtg-fav-notifier.ini"
 prev_items_file_name: str = f"{home_dir}/.tgtg-fav-notifier-items"
 optional_command = f"{home_dir}/.tgtg-fav-notifier-hook.sh"
+test_file= f"{home_dir}/test_file"
 
 CONFIG_FILE_SECTION: str = "DEFAULT"
 pp = pprint.PrettyPrinter(indent=4)
@@ -52,12 +54,28 @@ else:
         user_id=config[CONFIG_FILE_SECTION]["user_id"],
         cookie=config[CONFIG_FILE_SECTION]["cookie"],
     )
-    items = client.get_items()
+    items = client.get_items(favorites_only=False)
+    #print(items)
+    # raw_df = pd.DataFrame.from_dict(items)
+    # df = pd.DataFrame.from_dict(raw_df['item'])
+    # print(df)
+
+
+
     available_items = filter(lambda item: (item["items_available"] > 0), items)
     available_items_names = list(
         map(lambda item: (item["display_name"]), available_items)
     )
 
+    highly_rated_items = filter(lambda item: (False if "average_overall_rating" not in item["item"] else item["item"]["average_overall_rating"]["average_overall_rating"]>3.8), items)
+    highly_rated_item_names = list(
+        map(lambda item: (item["display_name"] + " " + str(item["item"]["average_overall_rating"]["average_overall_rating"])), highly_rated_items)
+    )
+
+    with open(test_file, "w") as test_file:
+    #     yaml.dump(items, file)
+        yaml.dump(highly_rated_item_names, test_file)
+    
     prev_available_items_names = None
     if os.path.exists(prev_items_file_name):
         with open(prev_items_file_name) as file:
@@ -83,7 +101,7 @@ else:
                 timeout=10,
             )
 
-            subprocess.call(
-                f'{optional_command} "TGTG Fav Notifier" "{available_items_name} has food available now"',
-                shell=True,
-            )
+            # subprocess.call(
+            #     f'{optional_command} "TGTG Fav Notifier" "{available_items_name} has food available now"',
+            #     shell=True,
+            # )
