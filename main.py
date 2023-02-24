@@ -11,6 +11,7 @@ from typing import Any
 import yaml
 from plyer import notification
 from tgtg import TgtgClient
+import pandas as pd
 
 if platform == "linux" or platform == "linux2":
     if os.getenv("XDG_RUNTIME_DIR") is None:
@@ -28,6 +29,7 @@ home_dir: str = os.path.expanduser("~")
 config_file_name: str = f"{home_dir}/.tgtg-fav-notifier.ini"
 prev_items_file_name: str = f"{home_dir}/.tgtg-fav-notifier-items"
 optional_command = f"{home_dir}/.tgtg-fav-notifier-hook.sh"
+test_file= f"{home_dir}/test_file"
 
 CONFIG_FILE_SECTION: str = "DEFAULT"
 pp = pprint.PrettyPrinter(indent=4)
@@ -57,6 +59,9 @@ else:
     available_items_names = list(
         map(lambda item: (item["display_name"]), available_items)
     )
+
+    with open(test_file, "w") as test_file:
+        yaml.dump(items, test_file)
 
     prev_available_items_names = None
     if os.path.exists(prev_items_file_name):
