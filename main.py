@@ -30,6 +30,7 @@ config_file_name: str = f"{home_dir}/.tgtg-fav-notifier.ini"
 prev_items_file_name: str = f"{home_dir}/.tgtg-fav-notifier-items"
 optional_command = f"{home_dir}/.tgtg-fav-notifier-hook.sh"
 test_file= f"{home_dir}/test_file"
+csv_file= f"{home_dir}/df.csv"
 
 CONFIG_FILE_SECTION: str = "DEFAULT"
 pp = pprint.PrettyPrinter(indent=4)
@@ -59,6 +60,9 @@ else:
     available_items_names = list(
         map(lambda item: (item["display_name"]), available_items)
     )
+
+    df = pd.json_normalize(items)
+    df.to_csv(csv_file)
 
     with open(test_file, "w") as test_file:
         yaml.dump(items, test_file)
@@ -92,3 +96,8 @@ else:
                 f'{optional_command} "TGTG Fav Notifier" "{available_items_name} has food available now"',
                 shell=True,
             )
+
+'''
+columns_to_print = ["display_name", "purchase_end", "distance", "items_available", "item.item_category", "item.description", "item.badges", "item.average_overall_rating.average_overall_rating", "store.store_location.address.addres_line", "pickup_interval.start", "pickup_interval.end"]
+
+'''
