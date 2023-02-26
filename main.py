@@ -12,6 +12,7 @@ import yaml
 from plyer import notification
 from tgtg import TgtgClient
 import pandas as pd
+from datetime import datetime
 
 if platform == "linux" or platform == "linux2":
     if os.getenv("XDG_RUNTIME_DIR") is None:
@@ -30,6 +31,7 @@ config_file_name: str = f"{home_dir}/.tgtg-fav-notifier.ini"
 prev_items_file_name: str = f"{home_dir}/.tgtg-fav-notifier-items"
 optional_command = f"{home_dir}/.tgtg-fav-notifier-hook.sh"
 test_file= f"{home_dir}/test_file"
+csv_file= "df.csv"
 
 CONFIG_FILE_SECTION: str = "DEFAULT"
 pp = pprint.PrettyPrinter(indent=4)
@@ -59,6 +61,24 @@ else:
     available_items_names = list(
         map(lambda item: (item["display_name"]), available_items)
     )
+
+    
+    df = pd.json_normalize(items)
+    
+    columns_to_print = ["display_name", "purchase_end", "distance", "items_available", "item.item_category", "item.description", "item.badges", "item.average_overall_rating.average_overall_rating", "store.store_location.address.address_line", "pickup_interval.start", "pickup_interval.end"]
+    rename_columns = ["display_name", "purchase_end", "distance", "items_available", "category", "description", "badges", "rating", "addres_line", "pickup_interval.start", "pickup_interval.end"]
+
+    for column in ["pickup_interval.start", "pickup_interval.end"]:
+        df[column] = pd.to_datetime(df[column])
+        #df[column] = df[column].dt.tz_localize('UTC').dt.tz_convert('US/Eastern')
+        df[column] = df[column].dt.tz_convert('US/Eastern')
+        df[column] = df[column].apply(lambda x: datetime.replace(x, tzinfo=None))
+
+    df = df[columns_to_print]
+    df.columns = rename_columns
+    df= df[ df['rating']>3.7]
+    df.to_csv(csv_file)
+
 
     with open(test_file, "w") as test_file:
         yaml.dump(items, test_file)
