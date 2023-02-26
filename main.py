@@ -32,6 +32,9 @@ prev_items_file_name: str = f"{home_dir}/.tgtg-fav-notifier-items"
 optional_command = f"{home_dir}/.tgtg-fav-notifier-hook.sh"
 test_file= f"{home_dir}/test_file"
 csv_file= "df.csv"
+yonge_stations="yonge-university-spadina-NAD83.csv"
+bloor_stations="bloor-danforth-NAD83.csv"
+sheppard_stations="sheppard-yonge-NAD83.csv"
 
 CONFIG_FILE_SECTION: str = "DEFAULT"
 pp = pprint.PrettyPrinter(indent=4)
@@ -65,8 +68,8 @@ else:
     
     df = pd.json_normalize(items)
     
-    columns_to_print = ["display_name", "purchase_end", "distance", "items_available", "item.item_category", "item.description", "item.badges", "item.average_overall_rating.average_overall_rating", "store.store_location.address.address_line", "pickup_interval.start", "pickup_interval.end"]
-    rename_columns = ["display_name", "purchase_end", "distance", "items_available", "category", "description", "badges", "rating", "addres_line", "pickup_interval.start", "pickup_interval.end"]
+    columns_to_print = ["display_name", "purchase_end", "distance", "items_available", "item.item_category", "item.description", "item.badges", "item.average_overall_rating.average_overall_rating", "store.store_location.address.address_line", "pickup_interval.start", "pickup_interval.end", "item.item_id"]
+    rename_columns = ["display_name", "purchase_end", "distance", "items_available", "category", "description", "badges", "rating", "addres_line", "pickup_interval.start", "pickup_interval.end", "id"]
 
     for column in ["pickup_interval.start", "pickup_interval.end"]:
         df[column] = pd.to_datetime(df[column])
@@ -77,38 +80,46 @@ else:
     df = df[columns_to_print]
     df.columns = rename_columns
     df= df[ df['rating']>3.7]
+    
+    staion_columns=["latitude", "longitude", "station_name"]
+    yonge_df = pd.read_csv(yonge_stations, names=staion_columns)
+    yonge_df.set_index('station_name', inplace=True)
+
+    print(yonge_df.loc["Downsview"])
     df.to_csv(csv_file)
 
 
-    with open(test_file, "w") as test_file:
-        yaml.dump(items, test_file)
+    pd.json_normalize(client.get_item('374970')).to_csv('single.csv')
 
-    prev_available_items_names = None
-    if os.path.exists(prev_items_file_name):
-        with open(prev_items_file_name) as file:
-            prev_available_items_names = yaml.full_load(file)
+    # with open(test_file, "w") as test_file:
+    #     yaml.dump(items, test_file)
+    #
+    # prev_available_items_names = None
+    # if os.path.exists(prev_items_file_name):
+    #     with open(prev_items_file_name) as file:
+    #         prev_available_items_names = yaml.full_load(file)
 
-    with open(prev_items_file_name, "w") as file:
-        yaml.dump(available_items_names, file)
+    # with open(prev_items_file_name, "w") as file:
+    #     yaml.dump(available_items_names, file)
 
-    print("Currently available: ")
-    pp.pprint(available_items_names)
-    print("Previously available: ")
-    pp.pprint(prev_available_items_names)
+    # print("Currently available: ")
+    # pp.pprint(available_items_names)
+    # print("Previously available: ")
+    # pp.pprint(prev_available_items_names)
 
-    for available_items_name in available_items_names:
-        if (
-            prev_available_items_names is None
-            or available_items_name not in prev_available_items_names
-        ):
-            notification.notify(
-                title="TGTG Fav Notifier",
-                message=f"{available_items_name} has food available now",
-                app_icon="",
-                timeout=10,
-            )
+    # for available_items_name in available_items_names:
+    #     if (
+    #         prev_available_items_names is None
+    #         or available_items_name not in prev_available_items_names
+    #     ):
+    #         notification.notify(
+    #             title="TGTG Fav Notifier",
+    #             message=f"{available_items_name} has food available now",
+    #             app_icon="",
+    #             timeout=10,
+    #         )
 
-            subprocess.call(
-                f'{optional_command} "TGTG Fav Notifier" "{available_items_name} has food available now"',
-                shell=True,
-            )
+    #         subprocess.call(
+    #             f'{optional_command} "TGTG Fav Notifier" "{available_items_name} has food available now"',
+    #             shell=True,
+    #         )
